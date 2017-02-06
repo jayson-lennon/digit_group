@@ -93,7 +93,7 @@ pub fn custom_group(num: &str,
                     group_fractional_part: bool)
                     -> String {
     let parts = num.split('.').collect::<Vec<_>>();
-    let integer = match parts.get(0) {
+    let integer_part = match parts.get(0) {
         Some(num) => {
             groupify_integer(num.chars(),
                              grouping_delimiter,
@@ -104,11 +104,13 @@ pub fn custom_group(num: &str,
         None => String::from(""),
     };
 
-    let mut grouped_string = integer;
-    if let Some(fractional) = parts.get(1) {
+    let mut grouped_string = integer_part;
+
+    if let Some(fractional_part) = parts.get(1) {
         grouped_string.push(decimal_mark);
+
         if group_fractional_part {
-            let fractional_grouped = groupify_integer(fractional.chars(),
+            let fractional_grouped = groupify_integer(fractional_part.chars(),
                                                       grouping_delimiter,
                                                       first_group_size,
                                                       group_size,
@@ -116,7 +118,7 @@ pub fn custom_group(num: &str,
             grouped_string.push_str(&fractional_grouped)
 
         } else {
-            grouped_string.push_str(fractional)
+            grouped_string.push_str(fractional_part)
         }
     }
 
