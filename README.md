@@ -4,12 +4,12 @@ This is a small Rust crate that provides grouping (aka "thousands separators") f
 
 ## Usage ##
 
-Cargo.toml:
+`Cargo.toml`:
 ```toml
 [dependencies]
 digit_group = "0.1"
 ```
-main.rs:
+`main.rs`:
 ```Rust
 extern crate digit_group;
 use digit_group{FormatGroup,custom_group};
