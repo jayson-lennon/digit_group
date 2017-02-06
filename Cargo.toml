@@ -1,0 +1,6 @@
+[package]
+name = "digit_group"
+version = "0.1.0"
+authors = ["Jayson Lennon <jay.dub.lennon@gmail.com>"]
+
+[dependencies]
