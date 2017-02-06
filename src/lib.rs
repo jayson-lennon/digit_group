@@ -72,7 +72,7 @@ use std::string::ToString;
 ///
 /// `group_size` is the number of digits of subsequent groups.
 ///
-/// 'group_fractional_part' determines whether to apply the grouping rules to the fractional
+/// `group_fractional_part` determines whether to apply the grouping rules to the fractional
 /// part of the number.
 ///
 /// # Examples
@@ -376,4 +376,19 @@ mod tests {
         let s = custom_group(&formatted, '.', ',', 3, 3, false);
         assert_eq!(s, "-123,456,789.12345600");
     }
+
+    #[test]
+    fn china() {
+        let x: f64 = 1234567.89;
+        let s = x.format_custom('.', ',', 4, 3, false);
+        assert_eq!(s, "123,4567.89");
+    }
+
+    #[test]
+    fn india() {
+        let x: f64 = 1234567.89;
+        let s = x.format_custom('.', ',', 3, 2, false);
+        assert_eq!(s, "12,34,567.89");
+    }
+
 }
