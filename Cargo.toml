@@ -2,5 +2,10 @@
 name = "digit_group"
 version = "0.1.0"
 authors = ["Jayson Lennon <jay.dub.lennon@gmail.com>"]
+description = "Provides grouping (thousands separators) for numeric types."
+repository = "https://github.com/jaysonWL/digit_group"
+readme = "README.md"
+keywords = ["group", "decimal", "thousands", "separator", "delimiter"]
+license = "Apache-2.0"
 
 [dependencies]
