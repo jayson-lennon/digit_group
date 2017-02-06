@@ -72,6 +72,9 @@ use std::string::ToString;
 ///
 /// `group_size` is the number of digits of subsequent groups.
 ///
+/// 'group_fractional_part' determines whether to apply the grouping rules to the fractional
+/// part of the number.
+///
 /// # Examples
 ///
 /// ```
@@ -110,7 +113,6 @@ pub fn custom_group(num: &str,
                                                       first_group_size,
                                                       group_size,
                                                       GroupDirection::LeftToRight);
-            println!("grouping fractional part");
             grouped_string.push_str(&fractional_grouped)
 
         } else {
@@ -124,9 +126,27 @@ pub fn custom_group(num: &str,
 /// Various formatters provided for integer grouping.
 pub trait FormatGroup {
     /// Formats the number according to ISO 80000-1, using a custom `decimal_mark`.
+    ///
+    /// #Example
+    ///
+    /// ```
+    /// use digit_group::FormatGroup;
+    ///
+    /// let x: f64 = 123456789.01234;
+    /// assert_eq!(x.format_si('.'), "123 456 789.012 34")
+    /// ```
     fn format_si(&self, decimal_mark: char) -> String;
 
-    /// Formats the integral value into groups of three separated by commas.
+    /// Formats the integral value into groups of three, separated by commas.
+    ///
+    /// #Example
+    ///
+    /// ```
+    /// use digit_group::FormatGroup;
+    ///
+    /// let x: u64 = 123456789;
+    /// assert_eq!(x.format_commas(), "123,456,789")
+    /// ```
     fn format_commas(&self) -> String;
 
     /// Formats the number based on supplied parameters.
@@ -142,6 +162,15 @@ pub trait FormatGroup {
     ///
     /// `group_fractional_part` determines whether to apply the above grouping rules to the decimal
     /// portion of the number.
+    ///
+    /// #Example
+    ///
+    /// ```
+    /// use digit_group::FormatGroup;
+    ///
+    /// let x: f64 = 123456789.01;
+    /// assert_eq!(x.format_custom('#',':',4,2, false), "1:23:45:6789#01")
+    /// ```
     fn format_custom(&self,
                      decimal_mark: char,
                      grouping_delimiter: char,
