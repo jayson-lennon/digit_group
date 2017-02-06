@@ -2,6 +2,8 @@
 
 This is a small Rust crate that provides grouping (aka "thousands separators") for numeric types.
 
+[Documentation](https://docs.rs/digit_group/0.1.0/digit_group/)
+
 ## Usage ##
 
 `Cargo.toml`:
