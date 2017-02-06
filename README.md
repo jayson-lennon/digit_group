@@ -18,8 +18,8 @@ fn main() {
     let x: f64 = 12345678.112233;
 
     // Typical usage. 
-    x.format_commas();                   // 12,345,678.112233
-    x.format_si('.');                    // 12 345 678.112 233
+    x.format_commas();   // 12,345,678.112233
+    x.format_si('.');    // 12 345 678.112 233
     
     // Customizable groupings, decimal marks, and grouping delimiters.
     x.format_custom('#',':',4,2, false); // 12:34:5678#112233
