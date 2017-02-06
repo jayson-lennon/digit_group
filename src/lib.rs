@@ -216,51 +216,58 @@ fn groupify_integer<T>(integral_digits: T,
             None => false,
         }
     };
+    // We need to skip 1 if we have a negative number.
     let skip_negative = {
         if is_negative { 1 } else { 0 }
     };
 
-    let first_group = {
-        if direction == GroupDirection::RightToLeft {
-            integral_digits.iter()
-                .skip(skip_negative)
-                .rev()
-                .take(first_group_size)
-                .collect::<Vec<&char>>()
-        } else {
-            integral_digits.iter()
-                .skip(skip_negative)
-                .take(first_group_size)
-                .collect::<Vec<&char>>()
-        }
-    };
-    let second_group = {
-        if direction == GroupDirection::RightToLeft {
-            integral_digits.iter()
-                .skip(skip_negative)
-                .rev()
-                .skip(first_group_size)
-                .collect::<Vec<&char>>()
-        } else {
-            integral_digits.iter()
-                .skip(skip_negative)
-                .skip(first_group_size)
-                .collect::<Vec<&char>>()
-        }
-    };
-
     let mut delimited_integer = Vec::new();
 
-    for digit in first_group {
-        delimited_integer.push(*digit)
+    // Handle the first group.
+    match direction {
+        GroupDirection::RightToLeft => {
+            // Reverse since we need to start from the decimal and move left away from it.
+            for digit in integral_digits.iter().skip(skip_negative).rev().take(first_group_size) {
+                delimited_integer.push(*digit)
+            }
+        }
+        GroupDirection::LeftToRight => {
+            for digit in integral_digits.iter().skip(skip_negative).take(first_group_size) {
+                delimited_integer.push(*digit)
+            }
+        }
     }
 
-    for (i, digit) in second_group.into_iter().enumerate() {
-        // Check if we need to add a delmiiter.
-        if i % group_size == 0 {
-            delimited_integer.push(delimiter);
+    // Handle subsequent groups.
+    match direction {
+        GroupDirection::RightToLeft => {
+            // Reverse since we need to start from the decimal and move left away from it.
+            for (i, digit) in integral_digits.iter()
+                .skip(skip_negative)
+                .rev()
+                .skip(first_group_size)
+                .enumerate() {
+
+                // Check if we need to add a delmiiter.
+                if i % group_size == 0 {
+                    delimited_integer.push(delimiter);
+                }
+                delimited_integer.push(*digit);
+            }
         }
-        delimited_integer.push(*digit);
+        GroupDirection::LeftToRight => {
+            for (i, digit) in integral_digits.iter()
+                .skip(skip_negative)
+                .skip(first_group_size)
+                .enumerate() {
+
+                // Check if we need to add a delmiiter.
+                if i % group_size == 0 {
+                    delimited_integer.push(delimiter);
+                }
+                delimited_integer.push(*digit);
+            }
+        }
     }
 
     // Add negative sign if needed.
@@ -268,6 +275,7 @@ fn groupify_integer<T>(integral_digits: T,
         delimited_integer.push('-');
     }
 
+    // We reversed above, so need to change it back for the final value.
     if direction == GroupDirection::RightToLeft {
         delimited_integer.reverse();
     }
