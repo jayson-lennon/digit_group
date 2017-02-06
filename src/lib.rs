@@ -31,7 +31,7 @@ use std::string::ToString;
 /// # Examples
 ///
 /// ```
-/// # use decmark::custom_group;
+/// # use digit_group::custom_group;
 ///
 /// let val: f64 = 111222.3;
 /// let formatted = format!("{:.3}", val);
