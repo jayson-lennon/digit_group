@@ -62,7 +62,7 @@ pub fn custom_group(num: &str,
 }
 
 /// Various formatters provided for integral grouping.
-pub trait NumberGrouping {
+pub trait FormatGroup {
     fn format_si(&self, decimal_mark: char) -> String;
     fn format_commas(&self) -> String;
     fn format_custom(&self,
@@ -130,10 +130,10 @@ fn groupify_integral(integral_digits: &Vec<char>,
 }
 
 
-macro_rules! impl_Number_Grouping {
+macro_rules! impl_FormatGroup {
     ($t:ty) => (
         
-        impl NumberGrouping for $t {
+        impl FormatGroup for $t {
             fn format_si(&self, decimal_mark: char) -> String {
                 self.format_custom(decimal_mark, ' ', 3, 3)
             }
@@ -160,24 +160,24 @@ macro_rules! impl_Number_Grouping {
     )
 }
 
-impl_Number_Grouping!(i8);
-impl_Number_Grouping!(i16);
-impl_Number_Grouping!(i32);
-impl_Number_Grouping!(i64);
-impl_Number_Grouping!(isize);
+impl_FormatGroup!(i8);
+impl_FormatGroup!(i16);
+impl_FormatGroup!(i32);
+impl_FormatGroup!(i64);
+impl_FormatGroup!(isize);
 
-impl_Number_Grouping!(u8);
-impl_Number_Grouping!(u16);
-impl_Number_Grouping!(u32);
-impl_Number_Grouping!(u64);
-impl_Number_Grouping!(usize);
+impl_FormatGroup!(u8);
+impl_FormatGroup!(u16);
+impl_FormatGroup!(u32);
+impl_FormatGroup!(u64);
+impl_FormatGroup!(usize);
 
-impl_Number_Grouping!(f32);
-impl_Number_Grouping!(f64);
+impl_FormatGroup!(f32);
+impl_FormatGroup!(f64);
 
 #[cfg(test)]
 mod tests {
-    use super::{NumberGrouping, custom_group};
+    use super::{FormatGroup, custom_group};
 
     #[test]
     fn u64_si() {
