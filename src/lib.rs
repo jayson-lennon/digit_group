@@ -189,7 +189,7 @@ enum GroupDirection {
 
 /// Creates a new `String` from the digits of an integral value with custom grouping rules applied.
 ///
-/// `integral_digits` are only the digits before the decimal point of a number.
+/// `integral_digits' are only the digits before the decimal point of a number.
 ///
 /// `delimiter` is the delimiter to use between groups.
 ///
@@ -208,7 +208,7 @@ fn groupify_integer(integral_digits: &Vec<char>,
     // Determine if we have a negative number to account for the hyphen (-).
     let is_negative = {
         match integral_digits.get(0) {
-            Some(d) => *d == '-',
+            Some(d) => if *d == '-' { true } else { false },
             None => false,
         }
     };
@@ -251,12 +251,14 @@ fn groupify_integer(integral_digits: &Vec<char>,
         delimited_integer.push(*digit)
     }
 
-    for (i, digit) in second_group.into_iter().enumerate() {
+    let mut i = 0;
+    for digit in second_group {
         // Check if we need to add a delmiiter.
         if i % group_size == 0 {
             delimited_integer.push(delimiter);
         }
         delimited_integer.push(*digit);
+        i += 1;
     }
 
     // Add negative sign if needed.
@@ -268,7 +270,9 @@ fn groupify_integer(integral_digits: &Vec<char>,
         delimited_integer.reverse();
     }
 
-    String::from_iter(delimited_integer.into_iter())
+    let stringified = String::from_iter(delimited_integer.into_iter());
+
+    stringified
 }
 
 
