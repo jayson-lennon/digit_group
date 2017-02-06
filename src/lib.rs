@@ -94,21 +94,21 @@ pub fn custom_group(num: &str,
                     -> String {
     let parts = num.split('.').collect::<Vec<_>>();
     let integer = match parts.get(0) {
-        Some(n) => n.chars().collect::<Vec<char>>(),
-        None => Vec::new(),
+        Some(num) => {
+            groupify_integer(num.chars(),
+                             grouping_delimiter,
+                             first_group_size,
+                             group_size,
+                             GroupDirection::RightToLeft)
+        }
+        None => String::from(""),
     };
-
-    let integer = groupify_integer(&integer,
-                                   grouping_delimiter,
-                                   first_group_size,
-                                   group_size,
-                                   GroupDirection::RightToLeft);
 
     let mut grouped_string = integer;
     if let Some(fractional) = parts.get(1) {
         grouped_string.push(decimal_mark);
         if group_fractional_part {
-            let fractional_grouped = groupify_integer(&fractional.chars().collect::<Vec<char>>(),
+            let fractional_grouped = groupify_integer(fractional.chars(),
                                                       grouping_delimiter,
                                                       first_group_size,
                                                       group_size,
@@ -189,7 +189,7 @@ enum GroupDirection {
 
 /// Creates a new `String` from the digits of an integral value with custom grouping rules applied.
 ///
-/// `integral_digits' are only the digits before the decimal point of a number.
+/// `integral_digits` an iterator over `char`s of an integer string.
 ///
 /// `delimiter` is the delimiter to use between groups.
 ///
@@ -199,16 +199,20 @@ enum GroupDirection {
 ///
 /// `direction` denotes if the groups will be counted from the left or from the right.
 /// Use `RightToLeft` for the integer portion of a number and `LeftToRight` for the decimal portion.
-fn groupify_integer(integral_digits: &Vec<char>,
-                    delimiter: char,
-                    first_group_size: usize,
-                    group_size: usize,
-                    direction: GroupDirection)
-                    -> String {
+fn groupify_integer<T>(integral_digits: T,
+                       delimiter: char,
+                       first_group_size: usize,
+                       group_size: usize,
+                       direction: GroupDirection)
+                       -> String
+    where T: Iterator<Item = char>
+{
+    let integral_digits = integral_digits.collect::<Vec<char>>();
+
     // Determine if we have a negative number to account for the hyphen (-).
     let is_negative = {
         match integral_digits.get(0) {
-            Some(d) => if *d == '-' { true } else { false },
+            Some(d) => *d == '-',
             None => false,
         }
     };
@@ -251,14 +255,12 @@ fn groupify_integer(integral_digits: &Vec<char>,
         delimited_integer.push(*digit)
     }
 
-    let mut i = 0;
-    for digit in second_group {
+    for (i, digit) in second_group.into_iter().enumerate() {
         // Check if we need to add a delmiiter.
         if i % group_size == 0 {
             delimited_integer.push(delimiter);
         }
         delimited_integer.push(*digit);
-        i += 1;
     }
 
     // Add negative sign if needed.
@@ -270,9 +272,7 @@ fn groupify_integer(integral_digits: &Vec<char>,
         delimited_integer.reverse();
     }
 
-    let stringified = String::from_iter(delimited_integer.into_iter());
-
-    stringified
+    String::from_iter(delimited_integer.into_iter())
 }
 
 
