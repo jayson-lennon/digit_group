@@ -51,8 +51,8 @@
 //!
 //! let val: f64 = 111222.3;
 //! let formatted = format!("{:.3}", val);
-//! let grouped = custom_group(&formatted, '.', ',', 3, 3, false);
-//! assert_eq!(grouped, "111,222.300");
+//! let grouped = custom_group(&formatted, ',', ' ', 3, 3, false);
+//! assert_eq!(grouped, "111 222,300");
 //! ```
 
 #![deny(missing_docs)]
