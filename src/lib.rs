@@ -12,15 +12,59 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! This crate provides grouping (aka "thousands separators") for numeric types.
+//!
+//! # Examples
+//!
+//! Typical use-case to format a number with groups sized 3 (United States):
+//!
+//! ```
+//! use digit_group::FormatGroup;
+//!
+//! let x = 123456789;
+//! assert_eq!(x.format_commas(), "123,456,789")
+//! ```
+//!
+//! Formatting based on SI standards (with custom decimal mark):
+//!
+//! ```
+//! use digit_group::FormatGroup;
+//!
+//! let x: f64 = 123456789.01234;
+//! assert_eq!(x.format_si('.'), "123 456 789.012 34")
+//! ```
+//!
+//! Completely custom decimal mark, grouping delimiter, initial group size, and subsequent group
+//! size:
+//!
+//! ```
+//! use digit_group::FormatGroup;
+//!
+//! let x: f64 = 123456789.01;
+//! assert_eq!(x.format_custom('#',':',4,2, false), "1:23:45:6789#01")
+//! ```
+//!
+//! Using `format!` to change the precision of a value prior to grouping:
+//!
+//! ```
+//! use digit_group::custom_group;
+//!
+//! let val: f64 = 111222.3;
+//! let formatted = format!("{:.3}", val);
+//! let grouped = custom_group(&formatted, '.', ',', 3, 3, false);
+//! assert_eq!(grouped, "111,222.300");
+//! ```
+
+#![deny(missing_docs)]
 use std::iter::FromIterator;
 use std::string::ToString;
 
 /// Groups a pre-formatted number passed as a `&str`. For use with numbers formatted with
-/// `format!()` to set significant digits, padding, etc.
+/// `format!` to set significant digits, padding, etc.
 ///
 /// `num` is a pre-formatted `&str` of a numeric value.
 ///
-/// `decimal_mark` is the `char` used to delimit the integral and fractional portions of the number.
+/// `decimal_mark` is the `char` used to delimit the integer and fractional portions of the number.
 ///
 /// `grouping_delimiter` is the delimiter to use between groups.
 ///
@@ -35,55 +79,103 @@ use std::string::ToString;
 ///
 /// let val: f64 = 111222.3;
 /// let formatted = format!("{:.3}", val);
-/// let grouped = custom_group(&formatted, '.', ',', 3, 3);
+/// let grouped = custom_group(&formatted, '.', ',', 3, 3, false);
 /// assert_eq!(grouped, "111,222.300");
 /// ```
 pub fn custom_group(num: &str,
                     decimal_mark: char,
                     grouping_delimiter: char,
                     first_group_size: usize,
-                    group_size: usize)
+                    group_size: usize,
+                    group_fractional_part: bool)
                     -> String {
     let parts = num.split('.').collect::<Vec<_>>();
-    let integral = match parts.get(0) {
+    let integer = match parts.get(0) {
         Some(n) => n.chars().collect::<Vec<char>>(),
         None => Vec::new(),
     };
 
-    let integral = groupify_integral(&integral, grouping_delimiter, first_group_size, group_size);
+    let integer = groupify_integer(&integer,
+                                   grouping_delimiter,
+                                   first_group_size,
+                                   group_size,
+                                   GroupDirection::RightToLeft);
 
-    let mut grouped_string = integral;
+    let mut grouped_string = integer;
     if let Some(fractional) = parts.get(1) {
         grouped_string.push(decimal_mark);
-        grouped_string.push_str(fractional)
+        if group_fractional_part {
+            let fractional_grouped = groupify_integer(&fractional.chars().collect::<Vec<char>>(),
+                                                      grouping_delimiter,
+                                                      first_group_size,
+                                                      group_size,
+                                                      GroupDirection::LeftToRight);
+            println!("grouping fractional part");
+            grouped_string.push_str(&fractional_grouped)
+
+        } else {
+            grouped_string.push_str(fractional)
+        }
     }
 
     grouped_string
 }
 
-/// Various formatters provided for integral grouping.
+/// Various formatters provided for integer grouping.
 pub trait FormatGroup {
+    /// Formats the number according to ISO 80000-1, using a custom `decimal_mark`.
     fn format_si(&self, decimal_mark: char) -> String;
+
+    /// Formats the integral value into groups of three separated by commas.
     fn format_commas(&self) -> String;
+
+    /// Formats the number based on supplied parameters.
+    ///
+    /// `decimal_mark` is the `char` used to delimit the integer and fractional portions of the
+    /// number.
+    ///
+    /// `grouping_delimiter` is the delimiter to use between groups.
+    ///
+    /// `first_group_size` is the number of digits of the initial group.
+    ///
+    /// `group_size` is the number of digits of subsequent groups.
+    ///
+    /// `group_fractional_part` determines whether to apply the above grouping rules to the decimal
+    /// portion of the number.
     fn format_custom(&self,
                      decimal_mark: char,
                      grouping_delimiter: char,
                      first_group_size: usize,
-                     group_size: usize)
+                     group_size: usize,
+                     group_fractional_part: bool)
                      -> String;
 }
 
-/// Creates a new `String` from the digits of an integral with custom grouping rules applied.
+/// Convenience for `groupify_integer`.
+#[derive(PartialEq)]
+enum GroupDirection {
+    RightToLeft,
+    LeftToRight,
+}
+
+/// Creates a new `String` from the digits of an integral value with custom grouping rules applied.
 ///
 /// `integral_digits' are only the digits before the decimal point of a number.
+///
 /// `delimiter` is the delimiter to use between groups.
+///
 /// `first_group_size` is the number of digits of the initial group.
+///
 /// `group_size` is the number of digits of subsequent groups.
-fn groupify_integral(integral_digits: &Vec<char>,
-                     delimiter: char,
-                     first_group_size: usize,
-                     group_size: usize)
-                     -> String {
+///
+/// `direction` denotes if the groups will be counted from the left or from the right.
+/// Use `RightToLeft` for the integer portion of a number and `LeftToRight` for the decimal portion.
+fn groupify_integer(integral_digits: &Vec<char>,
+                    delimiter: char,
+                    first_group_size: usize,
+                    group_size: usize,
+                    direction: GroupDirection)
+                    -> String {
     // Determine if we have a negative number to account for the hyphen (-).
     let is_negative = {
         match integral_digits.get(0) {
@@ -95,36 +187,61 @@ fn groupify_integral(integral_digits: &Vec<char>,
         if is_negative { 1 } else { 0 }
     };
 
-    // We are reversing the iterators to count from the least significant digit to the most
-    // significant digit. This allows simple grouping in the loop.
-    let first_group = integral_digits.iter().skip(skip_negative).rev().take(first_group_size);
-    let second_group = integral_digits.iter().skip(skip_negative).rev().skip(first_group_size);
+    let first_group = {
+        if direction == GroupDirection::RightToLeft {
+            integral_digits.iter()
+                .skip(skip_negative)
+                .rev()
+                .take(first_group_size)
+                .collect::<Vec<&char>>()
+        } else {
+            integral_digits.iter()
+                .skip(skip_negative)
+                .take(first_group_size)
+                .collect::<Vec<&char>>()
+        }
+    };
+    let second_group = {
+        if direction == GroupDirection::RightToLeft {
+            integral_digits.iter()
+                .skip(skip_negative)
+                .rev()
+                .skip(first_group_size)
+                .collect::<Vec<&char>>()
+        } else {
+            integral_digits.iter()
+                .skip(skip_negative)
+                .skip(first_group_size)
+                .collect::<Vec<&char>>()
+        }
+    };
 
-    let mut delimited_integral = Vec::new();
+    let mut delimited_integer = Vec::new();
 
     for digit in first_group {
-        delimited_integral.push(*digit)
+        delimited_integer.push(*digit)
     }
 
     let mut i = 0;
     for digit in second_group {
         // Check if we need to add a delmiiter.
         if i % group_size == 0 {
-            delimited_integral.push(delimiter);
+            delimited_integer.push(delimiter);
         }
-        delimited_integral.push(*digit);
+        delimited_integer.push(*digit);
         i += 1;
     }
 
     // Add negative sign if needed.
     if is_negative {
-        delimited_integral.push('-');
+        delimited_integer.push('-');
     }
 
-    // Vector was built backwards, so we need to reverse it.
-    delimited_integral.reverse();
+    if direction == GroupDirection::RightToLeft {
+        delimited_integer.reverse();
+    }
 
-    let stringified = String::from_iter(delimited_integral.into_iter());
+    let stringified = String::from_iter(delimited_integer.into_iter());
 
     stringified
 }
@@ -135,25 +252,27 @@ macro_rules! impl_FormatGroup {
         
         impl FormatGroup for $t {
             fn format_si(&self, decimal_mark: char) -> String {
-                self.format_custom(decimal_mark, ' ', 3, 3)
+                self.format_custom(decimal_mark, ' ', 3, 3, true)
             }
 
             fn format_commas(&self) -> String {
-                self.format_custom('.', ',', 3, 3)
+                self.format_custom('.', ',', 3, 3, false)
             }
 
             fn format_custom(&self,
                     decimal_mark: char,
                     grouping_delimiter: char,
                     first_group_size: usize,
-                    group_size: usize)
+                    group_size: usize,
+                    group_fractional_part: bool)
                     -> String {
                 let stringy_number = self.to_string();
                 custom_group(&stringy_number, 
                              decimal_mark, 
                              grouping_delimiter, 
                              first_group_size, 
-                             group_size)
+                             group_size,
+                             group_fractional_part)
             }
         }
 
@@ -195,16 +314,16 @@ mod tests {
 
     #[test]
     fn f64_si_negative() {
-        let x: f64 = -123456789.123456;
+        let x: f64 = -123456789.1234567;
         let s = x.format_si('.');
-        assert_eq!(s, "-123 456 789.123456");
+        assert_eq!(s, "-123 456 789.123 456 7");
     }
 
     #[test]
     fn f64_si() {
-        let x: f64 = 123456789.123456;
+        let x: f64 = 123456789.1234567;
         let s = x.format_si('.');
-        assert_eq!(s, "123 456 789.123456");
+        assert_eq!(s, "123 456 789.123 456 7");
     }
 
     #[test]
@@ -217,7 +336,7 @@ mod tests {
     #[test]
     fn f64_custom() {
         let x: f64 = -123456789.123456;
-        let s = x.format_custom(',', ':', 2, 3);
+        let s = x.format_custom(',', ':', 2, 3, false);
         assert_eq!(s, "-1:234:567:89,123456");
     }
 
@@ -225,7 +344,7 @@ mod tests {
     fn custom_standalone() {
         let x: f64 = -123456789.123456;
         let formatted = format!("{:.*}", 8, x);
-        let s = custom_group(&formatted, '.', ',', 3, 3);
+        let s = custom_group(&formatted, '.', ',', 3, 3, false);
         assert_eq!(s, "-123,456,789.12345600");
     }
 }
